@@ -179,7 +179,20 @@ button:focus-visible{outline:2px solid var(--legend);outline-offset:2px}
 :root{--core:#c79bff}
 .title.sub{font-size:2.4em}
 .panel.wide{max-width:74em}
-.head-row{display:flex;justify-content:space-between;align-items:baseline;gap:1em;flex-wrap:wrap}
+/* Phần đầu màn hình ngoài trận: nút quay lại ở góc trái, dính lại khi cuộn. */
+.ph{
+  position:sticky;top:-2em;z-index:2; /* bù khoảng đệm 2em của .overlay để dính sát mép trên */
+  display:flex;align-items:center;gap:.6em 1em;flex-wrap:wrap;
+  margin:-1.8em -2em 0;padding:.9em 2em;
+  background:var(--panel);border-bottom:1px solid var(--line);border-radius:4px 4px 0 0;
+}
+.ph .res{margin-left:auto}
+.back{
+  display:inline-flex;align-items:center;gap:.45em;cursor:pointer;
+  font:600 .8em var(--f-display);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);background:transparent;border:1px solid var(--line);border-radius:3px;padding:.45em .8em;
+}
+.back:hover{color:var(--ink);border-color:var(--dim)}
 .res{display:flex;gap:1em;font:600 .95em var(--f-display);font-variant-numeric:tabular-nums}
 .res .m{color:var(--metal)}
 .res .c,.foot b.core{color:var(--core)}

@@ -79,7 +79,7 @@
   <!-- Căn cứ -->
   <div class="overlay" id="baseOv" hidden>
     <div class="panel">
-      <div class="head-row"><span class="eyebrow" data-i18n="base.eyebrow"></span><span class="res" id="baseRes"></span></div>
+      <header class="ph"><button class="back" type="button" id="baseBack"><span aria-hidden="true">←</span> <span data-i18n="nav.toMain"></span></button><span class="eyebrow" data-i18n="base.eyebrow"></span><span class="res" id="baseRes"></span></header>
       <h2 class="title sub" data-i18n="base.title"></h2>
       <div class="tiles">
         <button class="tile primary" type="button" id="toStages"><b data-i18n="base.sortie"></b><span data-i18n="base.sortieSub"></span></button>
@@ -87,24 +87,22 @@
         <button class="tile" type="button" id="toSpecials"><b data-i18n="base.special"></b><span id="baseSpecial"></span></button>
         <button class="tile" type="button" id="toProfile"><b data-i18n="base.profile"></b><span data-i18n="base.profileSub"></span></button>
       </div>
-      <div class="actions"><button class="btn ghost" type="button" id="baseBack" data-i18n="nav.toMain"></button></div>
     </div>
   </div>
 
   <!-- Chọn màn -->
   <div class="overlay" id="stagesOv" hidden>
     <div class="panel">
-      <div class="head-row"><span class="eyebrow" data-i18n="stages.eyebrow"></span></div>
+      <header class="ph"><button class="back" type="button" data-back="baseOv"><span aria-hidden="true">←</span> <span data-i18n="nav.back"></span></button><span class="eyebrow" data-i18n="stages.eyebrow"></span></header>
       <h2 class="title sub" data-i18n="stages.title"></h2>
       <div class="pick-list" id="stageList"></div>
-      <div class="actions"><button class="btn ghost" type="button" data-back="baseOv" data-i18n="nav.back"></button></div>
     </div>
   </div>
 
   <!-- Chuẩn bị -->
   <div class="overlay" id="prepOv" hidden>
     <div class="panel">
-      <span class="eyebrow" data-i18n="prep.eyebrow"></span>
+      <header class="ph"><button class="back" type="button" data-back="stagesOv"><span aria-hidden="true">←</span> <span data-i18n="nav.back"></span></button><span class="eyebrow" data-i18n="prep.eyebrow"></span></header>
       <h2 class="title sub" id="prepTitle"></h2>
       <div class="prep-sp">
         <div><span class="label" data-i18n="prep.special"></span><b id="prepSpName"></b><p id="prepSpDesc"></p></div>
@@ -114,7 +112,6 @@
       <ul class="bonus-list" id="prepBonuses"></ul>
       <div class="actions">
         <button class="btn" type="button" id="goBtn" data-i18n="prep.go"></button>
-        <button class="btn ghost" type="button" data-back="stagesOv" data-i18n="nav.back"></button>
       </div>
     </div>
   </div>
@@ -122,24 +119,22 @@
   <!-- Special -->
   <div class="overlay" id="specialsOv" hidden>
     <div class="panel">
-      <span class="eyebrow" data-i18n="specialsUi.eyebrow"></span>
+      <header class="ph"><button class="back" type="button" id="specialsBack"><span aria-hidden="true">←</span> <span data-i18n="nav.back"></span></button><span class="eyebrow" data-i18n="specialsUi.eyebrow"></span></header>
       <h2 class="title sub" data-i18n="specialsUi.title"></h2>
       <p class="lead" data-i18n="specialsUi.lead"></p>
       <div class="pick-list" id="specialList"></div>
-      <div class="actions"><button class="btn ghost" type="button" id="specialsBack" data-i18n="nav.back"></button></div>
     </div>
   </div>
 
   <!-- Cây nâng cấp -->
   <div class="overlay" id="treeOv" hidden>
     <div class="panel wide">
-      <div class="head-row"><span class="eyebrow" data-i18n="treeUi.eyebrow"></span><span class="res" id="treeRes"></span></div>
+      <header class="ph"><button class="back" type="button" data-back="baseOv"><span aria-hidden="true">←</span> <span data-i18n="nav.back"></span></button><span class="eyebrow" data-i18n="treeUi.eyebrow"></span><span class="res" id="treeRes"></span></header>
       <h2 class="title sub" data-i18n="treeUi.title"></h2>
       <p class="lead" data-i18n="treeUi.lead"></p>
       <div class="tabs" role="tablist" id="treeTabs"></div>
       <div class="branches" id="treeBody"></div>
       <div class="actions">
-        <button class="btn ghost" type="button" data-back="baseOv" data-i18n="nav.back"></button>
         <button class="btn ghost" type="button" id="resetBtn"></button>
         <span class="note" id="treeNote" role="status"></span>
       </div>
@@ -149,7 +144,7 @@
   <!-- Hồ sơ -->
   <div class="overlay" id="profileOv" hidden>
     <div class="panel">
-      <span class="eyebrow" data-i18n="profile.eyebrow"></span>
+      <header class="ph"><button class="back" type="button" data-back="baseOv"><span aria-hidden="true">←</span> <span data-i18n="nav.back"></span></button><span class="eyebrow" data-i18n="profile.eyebrow"></span></header>
       <h2 class="title sub" data-i18n="profile.title"></h2>
       <div class="stats" id="profileStats"></div>
       <span class="label" data-i18n="profile.bosses"></span>
@@ -162,7 +157,6 @@
         <button class="btn ghost small" type="button" id="importCode" data-i18n="profile.import"></button>
         <span class="note" id="codeNote" role="status"></span>
       </div>
-      <div class="actions"><button class="btn ghost" type="button" data-back="baseOv" data-i18n="nav.back"></button></div>
     </div>
   </div>
 

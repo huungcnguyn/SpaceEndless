@@ -20,7 +20,8 @@ let specialsBack = 'baseOv';
 export function show(id) {
   for (const s of SCREENS) $(s).hidden = s !== id;
   RENDER[id]?.();
-  setTimeout(() => { const b = $(id).querySelector('button:not(:disabled)'); if (b) b.focus({ preventScroll: true }); }, 20);
+  // ưu tiên nút chính, không phải nút quay lại
+  setTimeout(() => { const b = $(id).querySelector('button:not(:disabled):not(.back)') || $(id).querySelector('button'); if (b) b.focus({ preventScroll: true }); }, 20);
 }
 export const hideAll = () => SCREENS.forEach(s => $(s).hidden = true);
 
