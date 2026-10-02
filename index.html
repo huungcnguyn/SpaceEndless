@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thủ Thành Không Gian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Chakra+Petch:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+<!-- Chữ hiển thị lấy từ src/lang/vi.js qua data-i18n / data-i18n-html. -->
+<div id="stage">
+  <div id="game"></div>
+
+  <div class="hud" id="hud" hidden>
+    <div class="xp"><i id="xpFill"></i></div>
+    <div class="hud-row">
+      <div class="cluster">
+        <span class="label" data-i18n="hud.ship"></span>
+        <div class="pips"><span class="pips" id="lives"></span><span class="shield none" id="shield" data-i18n-title="hud.shield"></span></div>
+        <span class="label" style="margin-top:.35em" data-i18n="hud.station"></span>
+        <div class="stbar" id="stBar"><i id="stFill"></i></div>
+      </div>
+      <div class="center">
+        <div class="wave" id="waveText"></div>
+        <span class="label" id="levelText"></span>
+        <div class="boss" id="boss">
+          <span class="name" id="bossName"></span>
+          <div class="bossbar" id="bossBar"><i id="bossFill"></i></div>
+        </div>
+      </div>
+      <div class="cluster right">
+        <span class="metal" id="metalText"></span>
+        <span class="dmg" id="dmgText"></span>
+        <button class="icon-btn" id="pauseBtn" type="button" data-i18n="hud.pause"></button>
+      </div>
+    </div>
+    <span class="keyhint" id="keyhint"></span>
+    <button class="special" id="spBtn" type="button" style="--p:0"><span data-i18n-html="hud.special"></span></button>
+  </div>
+
+  <div class="banner" id="banner"><h2 id="bannerH"></h2><p id="bannerP"></p></div>
+  <div class="flash" id="flash"></div>
+
+  <!-- Menu -->
+  <div class="overlay" id="menu">
+    <div class="panel">
+      <span class="eyebrow" data-i18n="menu.eyebrow"></span>
+      <h1 class="title" data-i18n-html="menu.title"></h1>
+      <p class="lead" data-i18n-html="menu.lead"></p>
+      <div class="setting">
+        <span class="label" data-i18n="menu.control"></span>
+        <div class="seg" role="group" data-i18n-aria="menu.controlAria">
+          <button type="button" id="ctlKey" data-ctl="keyboard" data-i18n="menu.keyboard"></button>
+          <button type="button" id="ctlMouse" data-ctl="mouse" data-i18n="menu.mouse"></button>
+        </div>
+      </div>
+      <div class="setting" id="mouseRow">
+        <span class="label" data-i18n="menu.mouseMode"></span>
+        <div class="seg" role="group" data-i18n-aria="menu.mouseMode">
+          <button type="button" id="mFollow" data-mm="follow" data-i18n="menu.mouseFollow"></button>
+          <button type="button" id="mHold" data-mm="hold" data-i18n="menu.mouseHold"></button>
+        </div>
+      </div>
+      <dl class="keys" id="keysList"></dl>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button" data-i18n="menu.start"></button>
+      </div>
+      <div class="foot">
+        <span><span data-i18n="menu.totalMetal"></span> <b id="totalMetal">0</b></span>
+        <span><span data-i18n="menu.bestWave"></span> <span id="bestWave">0</span></span>
+        <span data-i18n="menu.note"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lên cấp -->
+  <div class="overlay" id="cardsOv" hidden>
+    <div class="cards-wrap">
+      <div class="cards-head">
+        <h2 id="cardsTitle"></h2>
+        <p id="cardsSub"></p>
+      </div>
+      <div class="cards" id="cards"></div>
+      <div class="build" id="cardsBuild"></div>
+    </div>
+  </div>
+
+  <!-- Tạm dừng -->
+  <div class="overlay" id="pauseOv" hidden>
+    <div class="panel">
+      <span class="eyebrow" data-i18n="pause.eyebrow"></span>
+      <h2 class="title" style="font-size:2.4em" data-i18n="pause.title"></h2>
+      <div class="build" id="pauseBuild" style="justify-content:flex-start"></div>
+      <dl class="keys" id="keysList2"></dl>
+      <div class="actions">
+        <button class="btn" id="resumeBtn" type="button" data-i18n="pause.resume"></button>
+        <button class="btn ghost" id="quitBtn" type="button" data-i18n="pause.quit"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kết quả -->
+  <div class="overlay" id="resultOv" hidden>
+    <div class="panel">
+      <span class="eyebrow" id="resEyebrow" data-i18n="result.eyebrow"></span>
+      <h2 class="title" id="resTitle" style="font-size:2.6em"></h2>
+      <p class="lead" id="resLead"></p>
+      <div class="stats">
+        <div class="stat"><span class="label" data-i18n="result.wave"></span><b id="rWave">0</b></div>
+        <div class="stat"><span class="label" data-i18n="result.kills"></span><b id="rKills">0</b></div>
+        <div class="stat"><span class="label" data-i18n="result.level"></span><b id="rLevel">1</b></div>
+        <div class="stat metal"><span class="label" data-i18n="result.metal"></span><b id="rMetal">0</b></div>
+      </div>
+      <div class="build" id="resBuild" style="justify-content:flex-start"></div>
+      <div class="actions">
+        <button class="btn" id="againBtn" type="button" data-i18n="result.again"></button>
+        <button class="btn ghost" id="menuBtn" type="button" data-i18n="result.menu"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
