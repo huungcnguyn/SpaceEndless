@@ -2,7 +2,7 @@
 import { W, H } from './config.js';
 import { applyStatic } from './lang/index.js';
 import { G, newRun, setRun, setScene, setMouseIn } from './core/state.js';
-import { useSpecial } from './game/combat.js';
+import { useSpecial } from './game/specials.js';
 import { step } from './game/step.js';
 import { render, drawBackground } from './render/draw.js';
 import { hud } from './ui/hud.js';

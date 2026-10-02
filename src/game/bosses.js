@@ -10,10 +10,11 @@ import { hitShip, stationHit } from './combat.js';
 import { ring, shake } from './fx.js';
 import { banner } from '../ui/banner.js';
 
-export function spawnBoss(kind, pt) {
-  const def = BOSSES[kind];
-  const e = { id: nextId(), isBoss: true, kind, name: t(`bosses.${kind}.name`), x: pt.x, y: pt.y, kx: 0, ky: 0, r: def.r,
-    hp: def.hp, max: def.hp, xp: def.xp * xpScale(), metal: 1, color: def.color, flash: 0, inv: 0, t: 0, phase: 1,
+// o.main: boss chính (đợt cuối màn). o.hpMul: hệ số máu (Endless).
+export function spawnBoss(kind, pt, o = {}) {
+  const def = BOSSES[kind], hp = def.hp * (o.hpMul || 1);
+  const e = { id: nextId(), isBoss: true, kind, main: !!o.main, name: t(`bosses.${kind}.name`), x: pt.x, y: pt.y, kx: 0, ky: 0, r: def.r,
+    hp, max: hp, xp: def.xp * xpScale() * (1 + G.meta.stats.bossXp), metal: 1, color: def.color, flash: 0, inv: 0, t: 0, phase: 1,
     dir: Math.random() < .5 ? 1 : -1, tele: 0, teleMax: 1, rot: 0, bs: [] };
   initPhase(e);
   G.enemies.push(e); G.boss = e;

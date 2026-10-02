@@ -11,7 +11,8 @@ export const SHIP = {
 
 export const STATION = { hp: 400, waveHeal: .04, firstShock: 6 };
 
-export const SPECIAL = { cost: 100, xpGain: 2.2, bossPct: .06, dmg: 50, dmgPerWave: 8 };
+// Năng lượng special nạp theo kinh nghiệm nhặt được: mỗi điểm kinh nghiệm cho xpGain năng lượng.
+export const SPECIAL = { xpGain: 2.2 };
 
 export const LEVEL = { base: 7, growth: 1.17 };
 export const need = l => Math.floor(LEVEL.base * Math.pow(LEVEL.growth, l - 1));

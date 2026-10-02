@@ -10,13 +10,14 @@ Ngôn ngữ giao tiếp với người dùng và chữ trong game: **tiếng Vi�
 - Code chia thành ES module trong `src/`, không cần bước build. Vì dùng `type="module"` nên **phải chạy qua máy chủ cục bộ** (vd. `python -m http.server 8000` rồi mở `http://localhost:8000`); mở thẳng file `index.html` sẽ không chạy.
 - Cấu trúc thư mục:
   - `index.html` — chỉ chứa khung HTML; chữ tĩnh gắn qua `data-i18n` / `data-i18n-html`.
-  - `src/data/` — số liệu cân bằng: `player.js` (máy bay, trạm, special, cấp, vật phẩm), `enemies.js`, `bosses.js` (pha = danh sách hành vi), `cards.js` (số liệu trong `v`), `stages.js` (màn, nhóm địch, công thức đợt, hệ số theo đợt).
+  - `src/data/` — số liệu cân bằng: `player.js` (máy bay, trạm, cấp, vật phẩm), `enemies.js`, `bosses.js` (pha = danh sách hành vi), `cards.js` (số liệu trong `v`, trần trong trận), `stages.js` (màn, nhóm địch, công thức đợt, hệ số theo đợt, lõi boss, Endless), `specials.js`, `tree.js` (cây nâng cấp: chỉ số + trần, nút, giá, nút đỉnh).
   - `src/lang/` — `vi.js` chứa toàn bộ chữ hiển thị (cả mô tả thẻ), `index.js` có `t('khóa', ...tham số)`.
   - `src/core/` — `state.js` (trạng thái trận `G`, chỉ đổi qua `setRun`), `events.js` (kênh sự kiện), `save.js` (bản lưu có số phiên bản, chuyển đổi, xuất/nhập mã).
-  - `src/game/` — logic: `step.js` (vòng lặp), `waves.js`, `enemies.js` + `behaviors.js`, `bosses.js` (hành vi boss), `combat.js`, `cards.js`, `fx.js`.
-  - `src/ui/` — DOM: `flow.js` (luồng màn hình, phím), `hud.js`, `cards.js`, `banner.js`. `src/render/draw.js` — vẽ bằng Phaser.
-- Sự kiện đang phát: `hit`, `kill`, `levelUp`, `lifeLost`, `shieldBreak`, `special`, `cardPicked`, `bossSpawn`, `runOver`.
-- Chưa làm: object pool, lưới không gian cho va chạm, giao diện xuất/nhập mã lưu (đã có hàm `exportCode`/`importCode`).
+  - `src/game/` — logic: `step.js` (vòng lặp), `waves.js` (cả Endless), `enemies.js` + `behaviors.js`, `bosses.js` (hành vi boss), `combat.js`, `cards.js` (rút thẻ, rương, đổi thẻ), `specials.js`, `meta.js` (cây nâng cấp, mở khóa special, áp chỉ số vào trận), `fx.js`.
+  - `src/ui/` — DOM: `screens.js` (màn chính, căn cứ, chọn màn, chuẩn bị, special, hồ sơ; hàm `show(id)`), `tree.js` (cây nâng cấp), `flow.js` (bắt đầu/kết thúc trận, phím), `hud.js`, `cards.js`, `banner.js`. `src/render/draw.js` — vẽ bằng Phaser.
+- Sự kiện đang phát: `hit`, `kill`, `levelUp`, `lifeLost`, `shieldBreak`, `special`, `chest`, `cardPicked`, `bossSpawn`, `runOver`.
+- Chỉ số từ cây nâng cấp nằm ở `G.meta.stats` (đã giới hạn theo trần), nút đỉnh ở `G.meta.keys`.
+- Chưa làm: object pool, lưới không gian cho va chạm.
 - Về sau có thể đóng gói thành ứng dụng máy tính (Steam) và tối ưu cho điện thoại.
 
 ## Kiến trúc mục tiêu
@@ -80,16 +81,19 @@ Chọn **1 special trước trận**, nạp bằng kinh nghiệm nhặt được
 - Luồng màn hình: Màn hình chính → Căn cứ (Xuất kích, Nâng cấp, Special, Hồ sơ) → Chọn màn/Endless → Chuẩn bị → Trận → Kết quả.
 - HUD: giữa màn hình trống; máu trạm hiện cả ở góc và vòng quanh trạm; mũi tên cảnh báo địch ngoài màn hình.
 
-## Trạng thái hiện tại (bản chơi thử 1)
+## Trạng thái hiện tại (bản chơi thử 2)
 
-Đã có: màn 1 đầy đủ 15 đợt và 3 boss, 4 loại địch, 21 thẻ, khiên, mạng, Bom tinh vân, cài đặt điều khiển, lưu tổng mảnh kim loại và đợt cao nhất.
+Đã có: màn 1 đầy đủ 15 đợt và 3 boss, 4 loại địch, 21 thẻ, khiên, mạng, cài đặt điều khiển.
+Luồng màn hình đầy đủ (chính → căn cứ → chọn màn/Endless → chuẩn bị → trận → kết quả), hồ sơ có xuất/nhập mã lưu.
+Lõi boss (lần đầu hạ mỗi boss), rương boss sau boss phụ, 5 special có điều kiện mở khóa,
+cây nâng cấp 7 nhánh / 3 tab (trần chỉ số, nút đỉnh, đột phá, 3 nút giao, đặt lại lõi), chế độ Endless (boss xoay vòng, máu boss tăng sau đợt 15, mốc thưởng).
+Bản lưu phiên bản 3 (tự chuyển từ bản cũ).
 
-Code đã tách module (xem "Công nghệ"); bản lưu chuyển từ khóa `ttkg-v1` sang `ttkg-save` (phiên bản 2), tự đọc bản cũ.
-
-Chưa có: cây nâng cấp ngoài trận, lõi boss, căn cứ, chọn màn, các special khác, tiến hóa, rương boss, địch tinh anh, màn 2–4, chế độ Endless, âm thanh.
+Chưa có: tiến hóa, địch tinh anh, màn 2–4 (nên Lá chắn tuyệt đối và Ngưng đọng thời gian chưa mở được khi chơi thật), Endless xoay vòng bối cảnh, âm thanh.
+Số liệu cây nâng cấp và special là bản đầu, cần chơi thử để cân bằng.
 
 ## Quy ước làm việc
 
 - Mỗi thay đổi lớn: chạy thử trên trình duyệt trước khi commit.
-- Commit nhỏ, thông điệp rõ ràng bằng tiếng Việt.
+- Commit nhỏ, thông điệp commit viết bằng **tiếng Anh**.
 - Khi thêm tính năng mới, cập nhật mục "Trạng thái hiện tại".

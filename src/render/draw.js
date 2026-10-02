@@ -60,6 +60,12 @@ export function render(g) {
   for (const q of G.pickups) {
     const alpha = q.life < 3 && !q.pull ? (Math.floor(q.life * 8) % 2 ? .35 : 1) : 1;
     if (q.kind === 'xp') { g.fillStyle(0x7de9ff, alpha); polyPath(g, q.x, q.y, q.v > 3 ? 6 : 4.5, 4, t * 2); g.fillPath(); }
+    else if (q.kind === 'chest') {
+      const s = 10 + Math.sin(t * 6) * 1.5;
+      g.lineStyle(2, 0xffcf55, .35); g.strokeCircle(q.x, q.y, s + 8);
+      g.fillStyle(0xffcf55, 1); g.fillRect(q.x - s, q.y - s * .75, s * 2, s * 1.5);
+      g.fillStyle(0x05080f, 1); g.fillRect(q.x - s, q.y - 1.5, s * 2, 3); g.fillRect(q.x - 2, q.y - s * .75, 4, s * 1.5);
+    }
     else { g.fillStyle(0xff9a3d, alpha); g.fillRect(q.x - 4, q.y - 4, 8, 8); g.lineStyle(1, 0xffd2a8, alpha); g.strokeRect(q.x - 4, q.y - 4, 8, 8); }
   }
 
@@ -74,7 +80,7 @@ export function render(g) {
 
   // đạn
   for (const b of G.pb) {
-    const c = b.src === 'turret' ? 0x4fe3c1 : b.main ? 0xe6f8ff : 0x9fd8ff;
+    const c = b.src === 'turret' ? 0x4fe3c1 : b.src === 'escort' ? 0x7de9ff : b.main ? 0xe6f8ff : 0x9fd8ff;
     g.lineStyle(b.main ? 3 : 2, c, 1); g.lineBetween(b.x - b.vx * .018, b.y - b.vy * .018, b.x, b.y);
   }
   for (const b of G.eb) {
@@ -93,6 +99,15 @@ export function render(g) {
     if (G.p.shieldUp) { g.lineStyle(2, 0x7de9ff, .75); g.strokeCircle(S.x, S.y, 21); }
     if (G.p.magnet > 70) { g.lineStyle(1, 0x7de9ff, .07); g.strokeCircle(S.x, S.y, G.p.magnet); }
   }
+
+  // special đang chạy
+  const x = G.spx;
+  for (const o of x.escorts) { g.fillStyle(0x7de9ff, 1); tri(g, o.x, o.y, 8, S.aim, 2.5); }
+  if (x.aegisT > 0) {
+    const a = x.aegisT < 1 ? (Math.floor(x.aegisT * 10) % 2 ? .3 : .8) : .8;
+    g.lineStyle(3, 0xffcf55, a); g.strokeCircle(CX, CY, ST_R + 12); g.strokeCircle(S.x, S.y, 24);
+  }
+  if (x.freezeT > 0) { g.fillStyle(0x8fb4ff, .07); g.fillRect(0, 0, W, H); }
 
   // hiệu ứng
   for (const f of G.fx) {

@@ -12,6 +12,22 @@ export const STAGES = {
   },
 };
 
+// Màn hiển thị trong màn Chọn màn (màn chưa có trong STAGES hiện "Sắp có").
+export const STAGE_LIST = [1, 2, 3, 4];
+
+// Lõi boss: chỉ rơi khi hạ mỗi boss lần đầu. Boss ở đợt cuối màn là boss chính.
+export const CORES = { sub: 1, main: 3 };
+
+// Endless: dùng địch và boss của các màn đã vượt, boss mỗi `bossEvery` đợt, không rơi lõi.
+export const ENDLESS = {
+  unlockStage: 1,
+  baseStage: 1,
+  bossEvery: 5,
+  bossCycle: ['queen', 'heavy', 'mother'],
+  bossHpGrowth: 1.08,          // máu boss nhân thêm theo mỗi đợt sau đợt 15
+  milestones: { 25: 150, 50: 400, 75: 800, 100: 1500 }, // đợt: thưởng mảnh kim loại
+};
+
 // Nhóm sinh địch: một nhóm có thể gồm nhiều con.
 export const GROUPS = {
   drone: { type: 'drone', n: 1 },

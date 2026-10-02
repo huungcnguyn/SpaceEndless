@@ -3,13 +3,23 @@ import { W, H, CX, CY, TAU } from '../config.js';
 import { rand, pick } from '../util.js';
 import { t } from '../lang/index.js';
 import { G } from '../core/state.js';
-import { STAGES, GROUPS, WAVE } from '../data/stages.js';
+import { STAGES, GROUPS, WAVE, ENDLESS } from '../data/stages.js';
 import { STATION } from '../data/player.js';
 import { spawnEnemy } from './enemies.js';
 import { spawnBoss } from './bosses.js';
 import { banner } from '../ui/banner.js';
 
 export const stageDef = () => STAGES[G.stage];
+export const isEndless = () => G.mode === 'endless';
+
+// Boss của đợt w (hoặc null). Endless: boss mỗi `bossEvery` đợt, xoay vòng.
+export function bossFor(w) {
+  if (!isEndless()) return stageDef().bosses[w] || null;
+  if (w % ENDLESS.bossEvery) return null;
+  const c = ENDLESS.bossCycle;
+  return c[(w / ENDLESS.bossEvery - 1) % c.length];
+}
+const isMainBoss = w => !isEndless() && w === stageDef().waves;
 
 // Điểm trên rìa ngoài màn hình theo góc a nhìn từ tâm.
 export function edgePoint(a, m = 34) {
@@ -21,7 +31,7 @@ export function edgePoint(a, m = 34) {
 }
 
 export function buildWave(w) {
-  const sd = stageDef(), boss = sd.bosses[w];
+  const sd = stageDef(), boss = bossFor(w);
   let budget = Math.round((WAVE.budgetBase + w * WAVE.budgetPerWave) * (boss ? WAVE.bossBudgetMul : 1));
   const types = Object.keys(sd.unlock).filter(g => w >= sd.unlock[g]);
   const wt = sd.weight, cost = sd.cost;
@@ -44,13 +54,16 @@ export function buildWave(w) {
     if (gd.n > 1) for (let i = 0; i < gd.n; i++) q.push({ type: gd.type, t: tm + i * gd.gap, a: a + rand(-gd.spread, gd.spread) });
     else q.push({ type: gd.type, t: tm, a });
   });
-  if (boss) q.push({ type: 'boss', t: WAVE.bossSpawnAt, a: rand(0, TAU), boss });
+  if (boss) {
+    const hpMul = isEndless() ? Math.pow(ENDLESS.bossHpGrowth, Math.max(0, w - sd.waves)) : 1;
+    q.push({ type: 'boss', t: WAVE.bossSpawnAt, a: rand(0, TAU), boss, main: isMainBoss(w), hpMul });
+  }
   return q.sort((a, b) => a.t - b.t);
 }
 
 export function startWave() {
   G.wave++; G.queue = buildWave(G.wave); G.waveT = 0; G.waveState = 'active';
-  const sd = stageDef(), b = sd.bosses[G.wave], intro = sd.intro[G.wave];
+  const sd = stageDef(), b = bossFor(G.wave), intro = sd.intro[G.wave];
   if (b) banner(t('banner.bossWarn'), t(`bosses.${b}.name`), true);
   else if (intro) { const [name, desc] = t(`intro.${intro}`); banner(t('banner.wave', G.wave), t('banner.newEnemy', name, desc)); }
   else banner(t('banner.wave', G.wave), '');
@@ -59,13 +72,16 @@ export function startWave() {
 export function waveClear() {
   G.waveState = 'inter'; G.interT = WAVE.interAfter;
   G.pickups.forEach(p => p.pull = true);
-  G.st.hp = Math.min(G.st.max, G.st.hp + G.st.max * STATION.waveHeal);
-  banner(t('banner.waveClear', G.wave), t('banner.waveClearSub'));
+  G.st.hp = Math.min(G.st.max, G.st.hp + G.st.max * (STATION.waveHeal + G.meta.stats.waveHeal));
+  G.metal += Math.round(G.meta.stats.waveMetal);
+  const reward = isEndless() && ENDLESS.milestones[G.wave];
+  if (reward) { G.metal += reward; G.milestone = G.wave; banner(t('banner.milestone', G.wave), t('banner.milestoneSub', reward)); }
+  else banner(t('banner.waveClear', G.wave), t('banner.waveClearSub'));
 }
 
 export function spawnEntry(q) {
   const pt = edgePoint(q.a);
-  if (q.type === 'boss') return spawnBoss(q.boss, pt);
+  if (q.type === 'boss') return spawnBoss(q.boss, pt, { main: q.main, hpMul: q.hpMul });
   spawnEnemy(q.type, pt.x + rand(-10, 10), pt.y + rand(-10, 10));
 }
 

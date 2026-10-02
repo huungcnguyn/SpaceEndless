@@ -1,21 +1,29 @@
-// Màn chọn thẻ khi lên cấp và danh sách thẻ đã có.
+// Màn chọn thẻ (lên cấp, rương boss) và danh sách thẻ đã có.
 import { $ } from '../util.js';
 import { t } from '../lang/index.js';
 import { G } from '../core/state.js';
 import { on } from '../core/events.js';
 import { CARD_BY_ID } from '../data/cards.js';
-import { rollCards, applyCard } from '../game/cards.js';
+import { rollCards, applyCard, choosingChest, reroll } from '../game/cards.js';
 
 export function openCards() {
-  G.state = 'cards'; G.offer = rollCards(); renderCards();
+  G.state = 'cards'; G.offer = rollCards(choosingChest()); renderCards();
   $('cardsOv').hidden = false;
   setTimeout(() => { const b = document.querySelector('#cards .card'); if (b) b.focus({ preventScroll: true }); }, 30);
 }
 
+// Mở màn chọn thẻ nếu đang chơi và còn lượt chọn.
+export function maybeOpenCards() {
+  if (G && G.state === 'play' && (G.pending > 0 || G.chests > 0)) openCards();
+}
+
 function renderCards() {
-  $('cardsTitle').textContent = t('cardsUi.title', G.level - G.pending + 1);
-  $('cardsSub').textContent = G.pending > 1 ? t('cardsUi.subMany', G.pending) : t('cardsUi.sub');
+  const chest = choosingChest(), left = G.pending + G.chests;
+  $('cardsOv').classList.toggle('chest', chest);
+  $('cardsTitle').textContent = chest ? t('cardsUi.chest') : G.startPicks > 0 ? t('cardsUi.start') : t('cardsUi.title', G.level - G.pending + 1);
+  $('cardsSub').textContent = left > 1 ? t('cardsUi.subMany', left) : t(chest ? 'cardsUi.chestSub' : 'cardsUi.sub', G.offer.length);
   const box = $('cards'); box.innerHTML = '';
+  box.classList.toggle('four', G.offer.length === 4);
   G.offer.forEach((c, i) => {
     const cur = G.owned[c.id] || 0, nl = cur + 1;
     const el = document.createElement('button');
@@ -28,13 +36,20 @@ function renderCards() {
     el.addEventListener('click', () => chooseCard(i));
     box.appendChild(el);
   });
+  const rb = $('rerollBtn');
+  rb.hidden = G.rerolls <= 0;
+  rb.textContent = t('cardsUi.reroll', G.rerolls);
   renderBuild($('cardsBuild'));
 }
 
 export function chooseCard(i) {
   if (!G || G.state !== 'cards' || !G.offer[i]) return;
-  if (applyCard(i)) { G.offer = rollCards(); renderCards(); return; }
+  if (applyCard(i)) { G.offer = rollCards(choosingChest()); renderCards(); return; }
   $('cardsOv').hidden = true; G.state = 'play';
+}
+
+export function rerollCards() {
+  if (G && G.state === 'cards' && reroll()) renderCards();
 }
 
 export function renderBuild(el) {
@@ -48,4 +63,5 @@ export function renderBuild(el) {
   }
 }
 
-on('levelUp', () => { if (G.pending > 0 && G.state === 'play') openCards(); });
+on('levelUp', maybeOpenCards);
+on('chest', maybeOpenCards);

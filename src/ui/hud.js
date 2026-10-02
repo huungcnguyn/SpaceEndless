@@ -16,10 +16,10 @@ export function hud() {
   setH('lives', pips);
   const sh = $('shield'); sh.classList.toggle('none', !p.shield); sh.classList.toggle('on', p.shieldUp);
   const f = st.hp / st.max; $('stFill').style.width = (f * 100).toFixed(1) + '%'; $('stBar').classList.toggle('low', f < .3);
-  setH('waveText', t('hud.wave', Math.max(1, G.wave), STAGES[G.stage].waves));
+  setH('waveText', t('hud.wave', Math.max(1, G.wave), G.mode === 'endless' ? 0 : STAGES[G.stage].waves));
   setT('levelText', t('hud.level', G.level));
   $('xpFill').style.width = (G.xp / G.xpNeed * 100).toFixed(1) + '%';
-  setT('metalText', t('hud.metal', G.metal));
+  setT('metalText', t('hud.metal', G.metal, G.cores));
   setH('dmgText', t('hud.dmg', Math.round((dmgMult() - 1) * 100)));
   const sp = Math.round(G.sp.energy / G.sp.cost * 100);
   const btn = $('spBtn'); btn.style.setProperty('--p', sp); btn.classList.toggle('ready', sp >= 100);
@@ -37,6 +37,7 @@ on('bossSpawn', (e, def) => {
   }
 });
 
-on('special', () => {
+on('special', id => {
+  if (id !== 'bomb') return;
   const f = $('flash'); f.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove('on')));
 });

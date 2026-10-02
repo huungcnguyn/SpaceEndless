@@ -4,6 +4,7 @@ import { rand } from '../util.js';
 import { G } from '../core/state.js';
 import { emit } from '../core/events.js';
 import { SHIP, SPECIAL, LOOT, need } from '../data/player.js';
+import { KEYS } from '../data/tree.js';
 import { CV } from '../data/cards.js';
 import { ring, sparks, shake, FX_LIMIT } from './fx.js';
 import { checkBossPhase } from './bosses.js';
@@ -19,9 +20,14 @@ export function nearestEnemy(x, y, maxD, exclude) {
   return best;
 }
 
-export function damageEnemy(e, d) {
+// raw: sát thương cố định (vd. bom theo % máu boss), bỏ qua hệ số tăng sát thương lên boss.
+export function damageEnemy(e, d, raw) {
   if (e.hp <= 0) return;
   if (e.isBoss && e.inv > 0) return;
+  if (e.isBoss && !raw) {
+    const m = G.meta;
+    d *= 1 + m.stats.bossDmg + (m.keys.has('finisher') && e.hp / e.max < KEYS.finisherHp ? KEYS.finisherDmg : 0);
+  }
   e.hp -= d; e.flash = .07;
   if (e.isBoss) checkBossPhase(e);
 }
@@ -56,61 +62,61 @@ export function applyHit(b, e) {
 }
 
 export function stationHit(d) {
+  if (G.spx.aegisT > 0) return;
   const real = d * (1 - G.st.armor);
   G.st.hp -= real; G.stFlash = .15;
   if (real >= 6) shake(100, .003);
   if (G.st.hp <= 0) { G.st.hp = 0; emit('runOver', false, 'station'); }
 }
 
+// Năng lượng special khi máy bay trúng đòn (nút cây nâng cấp).
+function energyOnHit() {
+  const v = G.meta.stats.spOnHit;
+  if (v) G.sp.energy = Math.min(G.sp.cost, G.sp.energy + v);
+}
+
 export function hitShip() {
   const S = G.ship, p = G.p;
-  if (S.inv > 0 || G.state !== 'play') return;
+  if (S.inv > 0 || G.state !== 'play' || G.spx.aegisT > 0) return;
+  energyOnHit();
   if (p.shieldUp) {
     p.shieldUp = false; p.shieldT = p.shieldCd; S.inv = SHIP.invShield;
     ring(S.x, S.y, 14, 60, '#7de9ff', .35, 3);
     emit('shieldBreak');
     return;
   }
-  p.lives--; S.inv = SHIP.invHit; shake(220, .008);
+  p.lives--; S.inv = SHIP.invHit + G.meta.stats.invBonus; shake(220, .008);
   ring(S.x, S.y, 10, 90, '#ffb066', .45, 4); sparks(S.x, S.y, 0xffb066, 16);
   emit('lifeLost', p.lives);
   if (p.lives <= 0) emit('runOver', false, 'ship');
 }
 
 export function pickup(kind, x, y, v, burst) {
-  const a = rand(0, TAU), s = rand(.3, 1) * burst;
-  return { kind, x, y, v, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: LOOT.life, pull: false };
+  const a = rand(0, TAU), s = rand(.3, 1) * burst, m = G.meta;
+  if (kind === 'metal') {
+    if (m.keys.has('metalPlus')) v += 1;
+    if (m.keys.has('jackpot') && Math.random() < KEYS.jackpotChance) v *= KEYS.jackpotMul;
+  }
+  const pull = kind === 'chest' || (kind === 'metal' && m.keys.has('metalPull'));
+  return { kind, x, y, v, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: LOOT.life + m.stats.pickupLife, pull };
 }
 
 export function dropLoot(e) {
   const xv = e.xp, metal = Math.floor(G.wave / LOOT.metalPerWaves);
   if (e.isBoss) {
     for (let i = 0; i < LOOT.bossXpPieces; i++) G.pickups.push(pickup('xp', e.x, e.y, xv / LOOT.bossXpPieces * LOOT.bossXpMul, 220));
-    for (let i = 0; i < LOOT.bossMetalPieces; i++) G.pickups.push(pickup('metal', e.x, e.y, LOOT.bossMetalBase + metal, 200));
+    const bv = Math.round((LOOT.bossMetalBase + metal) * (1 + G.meta.stats.bossMetal));
+    for (let i = 0; i < LOOT.bossMetalPieces; i++) G.pickups.push(pickup('metal', e.x, e.y, bv, 200));
     return;
   }
   G.pickups.push(pickup('xp', e.x, e.y, xv, 60));
-  if (Math.random() < e.metal) G.pickups.push(pickup('metal', e.x, e.y, LOOT.metalBase + metal, 80));
+  if (Math.random() < e.metal * (1 + G.meta.stats.metalDrop)) G.pickups.push(pickup('metal', e.x, e.y, LOOT.metalBase + metal, 80));
 }
 
 export function addXp(v) {
-  G.xp += v;
+  G.xp += v * (1 + G.meta.stats.xpGain);
   G.sp.energy = Math.min(G.sp.cost, G.sp.energy + v * SPECIAL.xpGain * G.sp.gain);
   const from = G.level;
   while (G.xp >= G.xpNeed) { G.xp -= G.xpNeed; G.level++; G.xpNeed = need(G.level); G.pending++; }
   for (let l = from + 1; l <= G.level; l++) emit('levelUp', l);
-}
-
-export function useSpecial() {
-  if (!G || G.state !== 'play' || G.sp.energy < G.sp.cost) return;
-  G.sp.energy = 0;
-  for (const e of G.enemies) {
-    if (e.isBoss) damageEnemy(e, e.max * SPECIAL.bossPct);
-    else damageEnemy(e, SPECIAL.dmg + SPECIAL.dmgPerWave * G.wave);
-  }
-  G.eb = [];
-  if (G.p.shield) G.p.shieldUp = true;
-  ring(G.ship.x, G.ship.y, 20, 900, '#7de9ff', .7, 6);
-  shake(250, .006);
-  emit('special');
 }

@@ -3,14 +3,16 @@ import { W, H, CX, CY, ST_R } from '../config.js';
 import { clamp } from '../util.js';
 import { t } from '../lang/index.js';
 import { G, scene, mouseIn, keys, dmgMult } from '../core/state.js';
-import { SAVE } from '../core/save.js';
+import { SAVE, persist } from '../core/save.js';
 import { emit } from '../core/events.js';
 import { SHIP, LOOT } from '../data/player.js';
-import { WAVE } from '../data/stages.js';
+import { WAVE, CORES } from '../data/stages.js';
+import { KEYS } from '../data/tree.js';
 import { CV } from '../data/cards.js';
-import { updateWaves, stageDef } from './waves.js';
+import { updateWaves, isEndless } from './waves.js';
+import { updateSpecials, isDashing, isFrozen } from './specials.js';
 import { updateEnemies } from './enemies.js';
-import { nearestEnemy, damageEnemy, addBullet, applyHit, stationHit, hitShip, dropLoot, addXp } from './combat.js';
+import { nearestEnemy, damageEnemy, addBullet, applyHit, stationHit, hitShip, dropLoot, addXp, pickup } from './combat.js';
 import { ring, sparks, shake, updateFx } from './fx.js';
 import { banner } from '../ui/banner.js';
 
@@ -20,10 +22,12 @@ export function step(dt) {
   else updateWaves(dt);
 
   updateShip(dt);
+  updateSpecials(dt);
   updateStation(dt);
-  if (!updateEnemies(dt)) return;
+  const frozen = isFrozen();
+  if (!updateEnemies(dt, frozen)) return;
   updatePlayerBullets(dt);
-  if (!updateEnemyBullets(dt)) return;
+  if (!updateEnemyBullets(frozen ? 0 : dt)) return;
 
   const dead = [];
   G.enemies = G.enemies.filter(e => { if (e.hp <= 0) { dead.push(e); return false; } return true; });
@@ -55,10 +59,12 @@ function inputVelocity() {
 
 function updateShip(dt) {
   const S = G.ship, p = G.p;
-  const [tvx, tvy] = inputVelocity();
-  const k = Math.min(1, dt * 12);
-  S.vx += (tvx - S.vx) * k; S.vy += (tvy - S.vy) * k;
-  S.x = clamp(S.x + S.vx * dt, 14, W - 14); S.y = clamp(S.y + S.vy * dt, 14, H - 14);
+  if (!isDashing()) { // khi đang Lao xung kích, special điều khiển vị trí
+    const [tvx, tvy] = inputVelocity();
+    const k = Math.min(1, dt * 12);
+    S.vx += (tvx - S.vx) * k; S.vy += (tvy - S.vy) * k;
+    S.x = clamp(S.x + S.vx * dt, 14, W - 14); S.y = clamp(S.y + S.vy * dt, 14, H - 14);
+  }
   if (S.inv > 0) S.inv -= dt;
   if (p.shield && !p.shieldUp && (p.shieldT -= dt) <= 0) { p.shieldUp = true; ring(S.x, S.y, 10, 26, '#7de9ff', .3, 2); }
 
@@ -158,7 +164,9 @@ function updatePickups(dt) {
     }
     if (d < S.r + 10) {
       G.pickups.splice(i, 1);
-      if (q.kind === 'xp') addXp(q.v); else G.metal += q.v;
+      if (q.kind === 'xp') addXp(q.v);
+      else if (q.kind === 'chest') { G.chests++; emit('chest'); }
+      else G.metal += q.v;
       if (G.state !== 'play' && G.state !== 'cards') return false;
       continue;
     }
@@ -175,10 +183,26 @@ function onKill(e) {
   if (!e.isBoss) return;
   G.boss = null; shake(400, .012);
   ring(e.x, e.y, e.r, 260, '#ffcf55', .8, 6);
-  if (G.wave >= stageDef().waves) {
+  // Lõi boss: chỉ khi hạ boss này lần đầu (không rơi ở Endless). Ghi ngay để không mất khi tắt trình duyệt.
+  const first = !SAVE.bossKills[e.kind];
+  SAVE.bossKills[e.kind] = (SAVE.bossKills[e.kind] || 0) + 1;
+  let coreText = '';
+  if (first && !isEndless()) {
+    const n = e.main ? CORES.main : CORES.sub;
+    SAVE.cores += n; G.cores += n; coreText = t('banner.cores', n);
+  }
+  persist();
+  const m = G.meta;
+  if (m.keys.has('bossHeal')) G.st.hp = Math.min(G.st.max, G.st.hp + G.st.max * KEYS.bossHealPct);
+  if (m.keys.has('spFull')) G.sp.energy = G.sp.cost;
+  if (e.main) {
     for (const o of G.enemies) { sparks(o.x, o.y, o.color || 0xff5a7e, 6); o.hp = 0; }
     G.enemies = []; G.eb = []; G.winT = WAVE.winDelay;
     G.pickups.forEach(p => p.pull = true);
-    banner(t('banner.bossDown', e.name), t('banner.stageClear'));
-  } else banner(t('banner.bossDown', e.name), t('banner.bossDownSub'));
+    banner(t('banner.bossDown', e.name), coreText || t('banner.stageClear', G.stage));
+    return;
+  }
+  // Rương boss: chọn 1 trong 3 thẻ hiếm hoặc huyền thoại.
+  G.pickups.push(pickup('chest', e.x, e.y, 1, 40));
+  banner(t('banner.bossDown', e.name), coreText || t('banner.bossDownSub'));
 }

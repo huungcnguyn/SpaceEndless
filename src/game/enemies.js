@@ -6,6 +6,7 @@ import { ENEMIES, BEHAVIOR } from '../data/enemies.js';
 import { BEHAVIORS } from './behaviors.js';
 import { bossUpdate } from './bosses.js';
 import { hitShip } from './combat.js';
+import { SPECIALS } from '../data/specials.js';
 
 // `o` ghi đè chỉ số sau khi nhân hệ số đợt; o.spd được nhân thêm spdScale.
 export function spawnEnemy(type, x, y, o = {}) {
@@ -19,12 +20,13 @@ export function spawnEnemy(type, x, y, o = {}) {
   G.enemies.push(e); return e;
 }
 
-// Trả về false nếu trận kết thúc giữa chừng.
-export function updateEnemies(dt) {
-  const S = G.ship, kb = BEHAVIOR.knockback;
+// Trả về false nếu trận kết thúc giữa chừng. frozen: Ngưng đọng thời gian (địch đứng yên, boss chậm lại).
+export function updateEnemies(dt, frozen) {
+  const S = G.ship, kb = BEHAVIOR.knockback, rdt = dt;
   for (const e of G.enemies) {
-    if (e.flash > 0) e.flash -= dt;
-    if (e.isBoss) { bossUpdate(e, dt); continue; }
+    if (e.flash > 0) e.flash -= rdt;
+    if (e.isBoss) { bossUpdate(e, frozen ? rdt * SPECIALS.timestop.bossSlow : rdt); continue; }
+    dt = frozen ? 0 : rdt;
     e.rot += dt * 2;
     for (const b of e.behaviors) BEHAVIORS[b](e, dt, S);
     e.x += e.kx * dt; e.y += e.ky * dt;
